@@ -1,2 +1,2 @@
 # enigma
-An enigma simulator.
+An enigma cipher machine simulator.
