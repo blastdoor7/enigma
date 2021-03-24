@@ -909,34 +909,39 @@ int main(int argc, char** argv)
         //for(int rot3=0; rot3<8; rot3++) 
         { //if(rot3 == rot1 || rot3 == rot2) continue;
           vector<Rotor> rotors;
-          rotors.push_back(rotorsRev[rot1]);
-          rotors.push_back(rotorsRev[rot2]);
           rotors.push_back(rotorsRev[rot3]);
+          rotors.push_back(rotorsRev[rot2]);
+          rotors.push_back(rotorsRev[rot1]);
 	  cout << "current rotors " << rot1 << " " << rot2 << " " << rot3 << endl;
-          for(int ring1=0; ring1<26; ring1++) 
+          //for(int ring1=0; ring1<26; ring1++) 
+	  int ring1=6;
           { 
-            for(int ring2=0; ring2<26; ring2++) 
-            { //if(ring2 == ring1) continue;
-              for(int ring3=0; ring3<26; ring3++) 
-              { //if(ring3 == rot1 || ring3 == ring2) continue;
+            //for(int ring2=0; ring2<26; ring2++) 
+	    int ring2=12;
+            { 
+              //for(int ring3=0; ring3<26; ring3++) 
+	      int ring3=24;
+              { 
 	  //cout << "current rings " << ring1 << " " << ring2 << " " << ring3 << endl;
-                for(int msg1=0; msg1<26; msg1++) 
+                //for(int msg1=0; msg1<26; msg1++) 
                 { 
-                  for(int msg2=0; msg2<26; msg2++) 
+                  //for(int msg2=0; msg2<26; msg2++) 
                   { //if(msg2 == msg1) continue;
-                    for(int msg3=0; msg3<26; msg3++) 
+                    //for(int msg3=0; msg3<26; msg3++) 
                     { //if(msg3 == msg1 || msg3 == msg2) continue;
 	  //cout << "current msgkey " << msg1 << " " << msg2 << " " << msg3 << endl;
+	  int msg1 = 17;
+	int msg2 = 11;int msg3 = 15;
 		      Rotor r1 = rotors[0];
-		      r1.ringSetting(LETTERS[ring1]);
+		      r1.ringSetting(LETTERS[ring3]);
 		      Rotor r2 = rotors[1];
 		      r2.ringSetting(LETTERS[ring2]);
 		      Rotor r3 = rotors[2];
-		      r3 = rotors[2];
-		      r3.ringSetting(LETTERS[ring3]);
-		      r1.windowSetting(LETTERS[msg1]);
+		      r3.ringSetting(LETTERS[ring1]);
+
+		      r1.windowSetting(LETTERS[msg3]);
 		      r2.windowSetting(LETTERS[msg2]);
-		      r3.windowSetting(LETTERS[msg3]);
+		      r3.windowSetting(LETTERS[msg1]);
 		      rotors[0] = r1;
 		      rotors[1] = r2;
 		      rotors[2] = r3;
@@ -944,8 +949,8 @@ int main(int argc, char** argv)
                       EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
                       string test1_decrypted =
             "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP";
-                      if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; cout << "rotors " << rot1 << " " << rot2 << " " << rot3 << endl; cout << "rings " << ring1 << " " << ring2 << " " << ring3 << endl; cout << "msgkey " << msg1 << " " << msg2 << " " << msg3 << endl; break; }
-		      //cout << result << endl;
+                      if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; cout << "rotors " << rot1 << " " << rot2 << " " << rot3 << endl; cout << "rings " << ring1 << " " << ring2 << " " << ring3 << endl; cout << "msgkey " << msg1 << " " << msg2 << " " << msg3 << endl; ; }
+		      cout << result << endl;
                     }  //msg
                   }  //msg
                 }  //msg
