@@ -911,26 +911,29 @@ int main(int argc, char** argv)
           rotors.push_back(rotorsRev[rot1]);
           rotors.push_back(rotorsRev[rot2]);
           rotors.push_back(rotorsRev[rot3]);
-          for(int ring1=0; ring1<8; ring1++) 
+          for(int ring1=0; ring1<26; ring1++) 
           { 
-            for(int ring2=0; ring2<8; ring2++) 
+            for(int ring2=0; ring2<26; ring2++) 
             { if(ring2 == ring1) continue;
-              for(int ring3=0; ring3<8; ring3++) 
+              for(int ring3=0; ring3<26; ring3++) 
               { if(ring3 == rot1 || ring3 == ring2) continue;
-                for(int msg1=0; msg1<8; msg1++) 
+                for(int msg1=0; msg1<26; msg1++) 
                 { 
-                  for(int msg2=0; msg2<8; msg2++) 
+                  for(int msg2=0; msg2<26; msg2++) 
                   { if(msg2 == msg1) continue;
-                    for(int msg3=0; msg3<8; msg3++) 
+                    for(int msg3=0; msg3<26; msg3++) 
                     { if(msg3 == msg1 || msg3 == msg2) continue;
-                string result;
-                EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
-                cout << "test input " << input << endl;  
-                cout << "result " << result << endl;  
+		      rotors[0].ringSetting(LETTERS[ring1]);
+		      rotors[1].ringSetting(LETTERS[ring2]);
+		      rotors[2].ringSetting(LETTERS[ring3]);
+                      string result;
+                      EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
+                      cout << "test input " << input << endl;  
+                      cout << "result " << result << endl;  
   
-                string test1_decrypted =
+                      string test1_decrypted =
             "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP";
-                if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; break; }
+                      if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; break; }
                     }  //msg
                   }  //msg
                 }  //msg
