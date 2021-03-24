@@ -901,28 +901,32 @@ int main(int argc, char** argv)
     if(argc == 2) input = string(argv[1]);
     else input = ciphertext;
  
-    for(int rot1=0; rot1<8; rot1++) 
+    //for(int rot1=0; rot1<8; rot1++) 
+    int rot1 = 3; int rot2 = 1; int rot3 = 4;
     {
-      for(int rot2=0; rot2<8; rot2++) 
-      { if(rot2 == rot1) continue;
-        for(int rot3=0; rot3<8; rot3++) 
-        { if(rot3 == rot1 || rot3 == rot2) continue;
+      //for(int rot2=0; rot2<8; rot2++) 
+      { //if(rot2 == rot1) continue;
+        //for(int rot3=0; rot3<8; rot3++) 
+        { //if(rot3 == rot1 || rot3 == rot2) continue;
           vector<Rotor> rotors;
           rotors.push_back(rotorsRev[rot1]);
           rotors.push_back(rotorsRev[rot2]);
           rotors.push_back(rotorsRev[rot3]);
+	  cout << "current rotors " << rot1 << " " << rot2 << " " << rot3 << endl;
           for(int ring1=0; ring1<26; ring1++) 
           { 
             for(int ring2=0; ring2<26; ring2++) 
-            { if(ring2 == ring1) continue;
+            { //if(ring2 == ring1) continue;
               for(int ring3=0; ring3<26; ring3++) 
-              { if(ring3 == rot1 || ring3 == ring2) continue;
+              { //if(ring3 == rot1 || ring3 == ring2) continue;
+	  //cout << "current rings " << ring1 << " " << ring2 << " " << ring3 << endl;
                 for(int msg1=0; msg1<26; msg1++) 
                 { 
                   for(int msg2=0; msg2<26; msg2++) 
-                  { if(msg2 == msg1) continue;
+                  { //if(msg2 == msg1) continue;
                     for(int msg3=0; msg3<26; msg3++) 
-                    { if(msg3 == msg1 || msg3 == msg2) continue;
+                    { //if(msg3 == msg1 || msg3 == msg2) continue;
+	  //cout << "current msgkey " << msg1 << " " << msg2 << " " << msg3 << endl;
 		      Rotor r1 = rotors[0];
 		      r1.ringSetting(LETTERS[ring1]);
 		      Rotor r2 = rotors[1];
