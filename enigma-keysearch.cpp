@@ -835,7 +835,7 @@ int main(int argc, char** argv)
     const string rotorSelection = "I II III IV V VI VII VIII";
     const string ringSetting    = "R R R";
     const string messageKey     = "M M M";
-    const string plugboardCfg   = "";
+    const string plugboardCfg   = "DN GR IS KC QX TM PV HY FW BJ";
     const string reflectorCfg      = "B";
     const string  ciphertext = 
       "NQVLT YQFSE WWGJZ GQHVS EIXIM YKCNW IEBMB ATPPZ TDVCU PKAY";
@@ -923,9 +923,19 @@ int main(int argc, char** argv)
                   { if(msg2 == msg1) continue;
                     for(int msg3=0; msg3<26; msg3++) 
                     { if(msg3 == msg1 || msg3 == msg2) continue;
-		      rotors[0].ringSetting(LETTERS[ring1]);
-		      rotors[1].ringSetting(LETTERS[ring2]);
-		      rotors[2].ringSetting(LETTERS[ring3]);
+		      Rotor r1 = rotors[0];
+		      r1.ringSetting(LETTERS[ring1]);
+		      Rotor r2 = rotors[1];
+		      r2.ringSetting(LETTERS[ring2]);
+		      Rotor r3 = rotors[2];
+		      r3 = rotors[2];
+		      r3.ringSetting(LETTERS[ring3]);
+		      r1.windowSetting(LETTERS[msg1]);
+		      r2.windowSetting(LETTERS[msg2]);
+		      r3.windowSetting(LETTERS[msg3]);
+		      rotors[0] = r1;
+		      rotors[1] = r2;
+		      rotors[2] = r3;
                       string result;
                       EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
                       cout << "test input " << input << endl;  
@@ -934,6 +944,7 @@ int main(int argc, char** argv)
                       string test1_decrypted =
             "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP";
                       if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; break; }
+		      cout << result << endl;
                     }  //msg
                   }  //msg
                 }  //msg
