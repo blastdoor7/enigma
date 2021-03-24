@@ -938,13 +938,10 @@ int main(int argc, char** argv)
 		      rotors[2] = r3;
                       string result;
                       EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
-                      cout << "test input " << input << endl;  
-                      cout << "result " << result << endl;  
-  
                       string test1_decrypted =
             "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP";
                       if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; break; }
-		      cout << result << endl;
+		      //cout << result << endl;
                     }  //msg
                   }  //msg
                 }  //msg
