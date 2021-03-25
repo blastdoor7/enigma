@@ -372,6 +372,7 @@ class Rotor {
     stepSet = o.stepSet;
     map_ = o.map_;
     revMap_ = o.revMap_;
+    return *this;
   }
 
   //private: 
