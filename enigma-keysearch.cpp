@@ -11,8 +11,23 @@
 #include <sstream>
 #include <exception>
 #include <limits>
-#include <assert.h>
+
+//#include <chrono>
 #include <time.h>
+
+//template<typename TimeT = std::chrono::milliseconds>
+//struct measure
+//{
+//  template<typename F, typename ...Args>
+//  static typename TimeT::rep execution(F&& func, Args&&... args)
+//  {
+//    auto start = std::chrono::steady_clock::now();
+//    std::forward<decltype(func)>(func)(std::forward<Args>(args)...);
+//    auto duration = std::chrono::duration_cast< TimeT >(std::chrono::steady_clock::now()  - start);
+//    return duration.count();
+//  }
+//};
+
 
 using namespace std;
 const char* ROTORS[] = {
@@ -97,6 +112,106 @@ char i2a(const int i) {
     }
     throw invalid_argument("i2a called on value outside 0..25");
 }
+
+void letterFrequency(const string& s)
+{
+  vector<double> freq(256, 0);
+
+  for(unsigned i=0; i<s.size(); i++)
+  {
+    freq[s[i]]++;
+  }
+
+  //cout << "letter statisitics" << endl;
+  //cout << "letter frequencies" << endl;
+  for(unsigned i=0; i<freq.size(); i++)
+  {
+    if(freq[i] == 0) continue;
+    //cout << "  " << (char)i << "   " << freq[i] << " times";
+  }
+  //cout << endl;
+}
+
+void rms(const string& s, string& r)
+{
+  for(int i=0; i<s.size(); i++)
+  {
+    if(::isspace(s[i])) continue;
+    r+= s[i];
+  }
+}
+
+string caesarshift(const string& s, int shift)
+{
+  string res;
+
+  for(int i=0; i<s.size(); i++)
+  {
+	  char l = s[i];
+	  l -= 65;
+	  l+=shift;
+	  l=l%26;
+          res.push_back(l+65);
+  }
+  
+  return res;
+}
+string text__ic = "";
+vector<double> freq__ic(256,0);
+double ic(const string& t)
+{
+  text__ic="";
+  memset(freq__ic.data(), 0, freq__ic.size() * sizeof(freq__ic[0]));
+  rms(t, text__ic);
+
+  for(int i=0; i<text__ic.size(); i++)
+  {
+    if(text__ic[i] == ' ') continue;
+    freq__ic[text__ic[i]] ++;
+  }
+
+  double sum=0;
+  for(int i=0; i<freq__ic.size(); i++)
+  {
+    if(freq__ic[i] != 0)
+    {
+      double c = freq__ic[i];
+      if(c != 0)
+        sum += c * (c - 1);
+    } 
+  }
+  double ic = 26 * sum / (text__ic.size() * (text__ic.size() - 1));
+  int th_num=0;
+  int the_num=0;
+  for(size_t offset = t.find("TH"); offset != string::npos; offset = t.find("TH",offset+2))
+	  th_num++;
+  for(size_t offset = t.find("HE"); offset != string::npos; offset = t.find("HE",offset+2))
+	  th_num++;
+  for(size_t offset = t.find("IN"); offset != string::npos; offset = t.find("IN",offset+2))
+	  th_num++;
+  for(size_t offset = t.find("EN"); offset != string::npos; offset = t.find("EN",offset+2))
+	  th_num++;
+  for(size_t offset = t.find("IS"); offset != string::npos; offset = t.find("IS",offset+2))
+	  th_num++;
+  for(size_t offset = t.find("THE"); offset != string::npos; offset = t.find("THE",offset+2))
+	  the_num++;
+  for(size_t offset = t.find("AND"); offset != string::npos; offset = t.find("AND",offset+2))
+	  the_num++;
+  for(size_t offset = t.find("THA"); offset != string::npos; offset = t.find("THA",offset+2))
+	  the_num++;
+  for(size_t offset = t.find("ING"); offset != string::npos; offset = t.find("ING",offset+2))
+	  the_num++;
+  for(size_t offset = t.find("THI"); offset != string::npos; offset = t.find("ING",offset+2))
+	  the_num++;
+
+  float digramscore = th_num * 0.3;
+  float trigramscore = the_num * 0.5;
+  ic += digramscore;
+  ic += trigramscore;
+
+  return ic;
+}
+
 //
 ///**
 // * A rotor in the Enigma machine.
@@ -104,6 +219,44 @@ char i2a(const int i) {
 class Rotor {
 
   public:
+    Rotor(string& wiring, string& steps)    
+    {
+        if (!all_unique_uppercase(wiring)) {
+            throw invalid_argument("Rotor wiring must be 26 unique uppercase letters");
+        }
+        if (!all_unique_uppercase(steps)) {
+            throw invalid_argument("Rotor steps must be 0-26 unique uppercase letters");
+        }
+        this->steps = steps;
+        //if ('A' > ringSetting || ringSetting > 'Z') {
+        //    throw invalid_argument("Rotor ring setting must be exactly one uppercase letter");
+        //}
+        //if ('A' > initialPosition || initialPosition > 'Z') {
+        //    throw invalid_argument("Rotor initial position must be exactly one uppercase letter");
+        //}
+        set<int> uniq;
+        for (unsigned i=0; i<26; i++) {
+            const int a = a2i(LETTERS[i]);
+            const int b = a2i(wiring[i]);
+            this->map_[a] = b;
+            this->revMap_[b] = a;
+            uniq.insert(b);
+        }
+        if (uniq.size() != 26) {
+            throw invalid_argument("Rotor wiring must have each letter exactly once");
+        }
+
+        //this->rs = a2i(ringSetting);
+        //for(unsigned i=0; i<steps.size(); i++) {
+        //    this->stepSet.insert(Mod((a2i(steps[i]) - rs) , 26));
+        //}
+        //if (this->stepSet.size() != steps.size()) {
+        //    // This isn't strictly fatal, but it's probably a mistake
+        //    throw invalid_argument("Rotor steps must be unique");
+        //}
+        //this->pos = Mod((a2i(initialPosition) - rs),  26);
+        //cout << "Rotor initial pos " << pos << endl;
+    }
     /**
      * Rotor constructor.
      *
@@ -146,45 +299,31 @@ class Rotor {
         }
         this->pos = Mod((a2i(initialPosition) - rs),  26);
         //cout << "Rotor initial pos " << pos << endl;
+        this->steps = steps;
     }
 
-    Rotor(const string& wiring, const string& steps)    {
-      this->steps = steps;
-        if (!all_unique_uppercase(wiring)) {
-            throw invalid_argument("Rotor wiring must be 26 unique uppercase letters");
-        }
-        if (!all_unique_uppercase(steps)) {
-            throw invalid_argument("Rotor steps must be 0-26 unique uppercase letters");
-        }
-        set<int> uniq;
-        for (unsigned i=0; i<26; i++) {
-            const int a = a2i(LETTERS[i]);
-            const int b = a2i(wiring[i]);
-            this->map_[a] = b;
-            this->revMap_[b] = a;
-            uniq.insert(b);
-        }
-        if (uniq.size() != 26) {
-            throw invalid_argument("Rotor wiring must have each letter exactly once");
-        }
-    }
-
-    void ringSetting(char ringSetting)
+    void ringSetting(const char& ringSetting)
     {
-        this->rs = a2i(ringSetting);
-        this->stepSet.clear();
-        for(unsigned i=0; i<steps.size(); i++) {
-            this->stepSet.insert(Mod((a2i(steps[i]) - rs) , 26));
-        }
-        if (this->stepSet.size() != steps.size()) {
-            // This isn't strictly fatal, but it's probably a mistake
-            throw invalid_argument("Rotor steps must be unique");
-        }
+      this->stepSet.clear();
+      if ('A' > ringSetting || ringSetting > 'Z') {
+        throw invalid_argument("Rotor ring setting must be exactly one uppercase letter");
+      }
+      this->rs = a2i(ringSetting);
+      for(unsigned i=0; i<steps.size(); i++) {
+          this->stepSet.insert(Mod((a2i(steps[i]) - rs) , 26));
+      }
+      if (this->stepSet.size() != steps.size()) {
+          // This isn't strictly fatal, but it's probably a mistake
+          throw invalid_argument("Rotor steps must be unique");
+      }
     }
 
-    void windowSetting(char initialPosition)
+    void startPosition(const char& initialPosition)
     {
-        this->pos = Mod((a2i(initialPosition) - rs),  26);
+      if ('A' > initialPosition || initialPosition > 'Z') {
+        throw invalid_argument("Rotor initial position must be exactly one uppercase letter");
+      }
+      this->pos = Mod((a2i(initialPosition) - rs),  26);
     }
 
     /**
@@ -225,16 +364,16 @@ class Rotor {
         return Mod(perm - this->pos , 26);
     }
 
-   Rotor& operator=(const Rotor& o)
-   {
-     this->steps = o.steps;
-     this->pos = o.pos;
-     this->rs = o.rs;
-     this->stepSet = o.stepSet;
-     this->map_ = o.map_;
-     this->revMap_ = o.revMap_;
-     return *this;
-   }
+  Rotor& operator=(const Rotor& o)
+  {
+    steps = o.steps;
+    pos   = o.pos;
+    rs    = o.rs;
+    stepSet = o.stepSet;
+    map_ = o.map_;
+    revMap_ = o.revMap_;
+  }
+
   //private: 
     string steps;
     int pos;
@@ -313,8 +452,6 @@ class PairMapBase {
     int revTransform(int c) {
         return this->transform(c);
     }
-
-   
   protected:
     string pairs;
     map<int, int>  map_;
@@ -368,13 +505,6 @@ class Plugboard : public PairMapBase {
 
     }
     Plugboard() : PairMapBase("","") {}
-
-    Plugboard& operator=(const Plugboard& o)
-    {
-      this->pairs = o.pairs;
-      this->map_ = o.map_;
-      return *this;
-    }
 };
 
 //
@@ -399,16 +529,6 @@ class EnigmaBase {
     this->rotorsRev.push_back(MIDDLE); 
     this->rotorsRev.push_back(RIGHT); 
     this->reflector = reflector;
-    this->plugboard = plugboard;
-  }
-  void conf(vector<Rotor>& rotors, const Reflector& reflector, const Plugboard& plugboard) {
-    this->rotors[0] = rotors[0];
-    this->rotors[1] = rotors[1];
-    this->rotors[2] = rotors[2];
-    this->rotorsRev[0] = rotors[2]; 
-    this->rotorsRev[1] = rotors[1]; 
-    this->rotorsRev[2] = rotors[0]; 
-    //this->reflector = reflector;
     this->plugboard = plugboard;
   }
 
@@ -450,51 +570,6 @@ class EnigmaBase {
      * @param {string} input - Data to encrypt.
      * @returns {string}
      */
-    void crypt(char* input, char* result, unsigned LEN) {
-        //cout << "  crypt input " << input << endl;
-        for(unsigned ii=0; ii<LEN; ii++) {
-          //cout << "input letter " << input[i] << endl;
-            int letter = a2i(input[ii]);
-            if (letter == -1) {
-                result[ii] = input[ii];
-                continue;
-            }
-            // First, step the rotors forward.
-            //for (unsigned i=0; i<this->rotors.size(); i++) {
-            //  cout << "BEFORE STEP rotor " << i << " POS " << rotors[i].pos << endl;
-            //}
-            this->step();
-            //for (unsigned i=0; i<this->rotors.size(); i++) {
-              //cout << "AFTER STEP rotor " << i << " POS " << rotors[i].pos << endl;
-            //}
-            // Now, run through the plugboard.
-            //cout << " before plugboard transform " << letter << endl;
-            letter = this->plugboard.transform(letter);
-            //cout << " plugboard transform " << letter << endl;
-            // Then through each wheel in sequence, through the reflector, and
-            // backwards through the wheels again.
-            for (unsigned i=0; i<this->rotors.size(); i++) {
-                //cout << "ROTOR vector index " << i << endl;
-                //cout << "ROTOR pos " << rotors[i].pos << endl;
-                //cout << "before rotor trans letter " << i2a(letter) << endl;
-                letter = rotors[i].transform(letter);
-                //cout << "after rotor trans letter " << i2a(letter) << endl;
-            }
-            letter = this->reflector.transform(letter);
-            //cout << "after reflection letter " << i2a(letter) << endl;
-            for (int i=2; i>=0; i--) {
-                //cout << "REVERSE PATH ROTOR vector index " << i << endl;
-                //cout << "REVERSE ROTOR pos " << rotors[i].pos << endl;
-                //cout << "before rotor reverse trans letter " << i2a(letter) << endl;
-                letter = rotors[i].revTransform(letter);
-                //cout << "after rotor reverse trans letter " << i2a(letter) << endl;
-            }
-            // Finally, back through the plugboard.
-            letter = this->plugboard.revTransform(letter);
-            //cout << " i2a 1" << endl;
-            result[ii] = i2a(letter);
-        }
-    }
     void crypt(const string& input, string& result) {
         //cout << "  crypt input " << input << endl;
         result = "";
@@ -540,6 +615,7 @@ class EnigmaBase {
             //cout << " i2a 1" << endl;
             result += i2a(letter);
         }
+        //return result;
     }
    protected:
     vector<Rotor> rotors;
@@ -569,398 +645,216 @@ class EnigmaMachine : public EnigmaBase {
 
 };
 
+bool present(const string& s, char c)
+{
+  for(int i=0; i<s.size(); i++)
+  {
+    if(s[i] == c) return true;
+  }
+  return false;
+}
+
+class rotorstats
+{
+  public:
+    string rotorsel;
+    float  best;
+    string decrypt;
+    string msgkey;
+    string ringsetting;
+};
 int main(int argc, char** argv)
 {
+  time_t start;
+  time(&start);
+
+  vector<rotorstats> stats;
+  
+  string input;
+  input = string(argv[1]);
+  const string plugboardCfg   = 
+"DN GR IS KC QX TM PV HY FW BJ";
+  const string reflectorCfg      = "B";
+  //403 ABC INPUTJHJHJH <PLUGS> <REF>
+  cout << "input " << input << endl;
+  cout << "plugs " << plugboardCfg << endl;
+  cout << "reflector " << reflectorCfg << endl;
+
+  int refid = -1;
+  if(reflectorCfg == "B") refid = 0;
+  if(reflectorCfg == "C") refid = 1;
+
+  map<string, int> rotorNameMap;
+  rotorNameMap["I"]    = 0; 
+  rotorNameMap["II"]   = 1; 
+  rotorNameMap["III"]  = 2; 
+  rotorNameMap["IV"]   = 3; 
+  rotorNameMap["V"]    = 4; 
+  rotorNameMap["VI"]   = 5; 
+  rotorNameMap["VII"]  = 6; 
+  rotorNameMap["VIII"] = 7; 
+
+  map<int, string> rotorIndexToNameMap;
+  rotorIndexToNameMap[0] = "I"; 
+  rotorIndexToNameMap[1] = "II"; 
+  rotorIndexToNameMap[2] = "III"; 
+  rotorIndexToNameMap[3] = "IV"; 
+  rotorIndexToNameMap[4] = "V"; 
+  rotorIndexToNameMap[5] = "VI"; 
+  rotorIndexToNameMap[6] = "VII"; 
+  rotorIndexToNameMap[7] = "VIII"; 
+
+  vector<Rotor> rotors;
+  istringstream iss("I II III IV V");
+
+    //"EKMFLGDQVZNTOWYHXUSPAIBRCJ<R",	//I
+    //"AJDKSIRUXBLHWTMCQGZNPYFVOE<F",	//II
+    //"BDFHJLCPRTXVZNYEIWGAKMUSQO<W",	//III
+    //"ESOVPZJAYQUIRHXLNFTGKDCMWB<K",	//IV
+    //"VZBRGITYUPSDNHLXAWMJQOFECK<A",	//V
+
+
+   string wI = "EKMFLGDQVZNTOWYHXUSPAIBRCJ";  string stepsI = "R";
+   string wII = "AJDKSIRUXBLHWTMCQGZNPYFVOE";  string stepsII = "F";
+   string wIII = "BDFHJLCPRTXVZNYEIWGAKMUSQO";  string stepsIII = "W";
+   string wIV = "ESOVPZJAYQUIRHXLNFTGKDCMWB";  string stepsIV = "K";
+   string wV = "VZBRGITYUPSDNHLXAWMJQOFECK";  string stepsV = "A";
+   Rotor r1 = Rotor(wI, stepsI, 'Z', 'Z');
+   Rotor r2 = Rotor(wII, stepsII, 'Z', 'Z');
+   Rotor r3 = Rotor(wIII, stepsIII, 'Z', 'Z');
+   Rotor r4 = Rotor(wIV, stepsIV, 'Z', 'Z');
+   Rotor r5 = Rotor(wV, stepsV, 'Z', 'Z');
+   vector<Rotor> rotorVec;
+   rotorVec.push_back(r1);
+   rotorVec.push_back(r2);
+   rotorVec.push_back(r3);
+   rotorVec.push_back(r4);
+   rotorVec.push_back(r5);
+
+  Reflector      reflector(REFLECTORS[refid]);
+  Plugboard      plugboard(plugboardCfg);
+  vector<Rotor> rotorSel;
+  rotorSel.push_back(rotorVec[0]);
+  rotorSel.push_back(rotorVec[1]);
+  rotorSel.push_back(rotorVec[2]);
+
+  string result = ""; 
+  double bestIC=0;
+  
+  //for(unsigned ri=0; ri<5; ri++)
+  int ri = 4; 
   {
-	  cout << "running test 1 ..." << endl;
-    const string rotorSelection = "IV V III";
-    const string ringSetting    = "X R V";
-    const string messageKey     = "M P Y";
-    const string plugboardCfg   = "SY EK NZ OR CG JM QU PV BI LW";
-    const string reflectorCfg      = "B";
-    const string  ciphertext = 
-
-  "UFJZS NKIRA CGTPF UONXD GQMPU QXUGF OWEZS TCBJD"
-  "JLFME AZQRM NZZYI CGSSR YOFQX ADSPU QIMXM MELYR"
-  "XKXYI MDEEW ISKDP RSTFR TCOKB GGQTQ KPKMP NCCGH"
-  "YUVJO TIVMA IVIGK WQKWJ FOYMR VFBVY RKEZF SYCBY"
-  "QQSOQ CIZUU SUTB";
-  
-    map<string, int> rotorNameMap;
-    rotorNameMap["I"]    = 0; 
-    rotorNameMap["II"]   = 1; 
-    rotorNameMap["III"]  = 2; 
-    rotorNameMap["IV"]   = 3; 
-    rotorNameMap["V"]    = 4; 
-    rotorNameMap["VI"]   = 5; 
-    rotorNameMap["VII"]  = 6; 
-    rotorNameMap["VIII"] = 7; 
-  
-   
-    vector<char> ringSettingVec; 
-    istringstream issRingSetting(ringSetting);
-    string rs;
-    while(getline(issRingSetting, rs, ' '))
-    {
-      ringSettingVec.push_back(rs[0]);
-    }
-  
-  
-    vector<char> messageKeyVec;
-    istringstream issMessageKeyVec(messageKey);
-    string wp;
-    while(getline(issMessageKeyVec, wp, ' '))
-    {
-      messageKeyVec.push_back(wp[0]);
-    }
-  
-  
-    vector<Rotor> rotorsRev;
-    istringstream iss(rotorSelection);
-    int k=0;
-    string rotorName;
-    while(getline(iss, rotorName, ' '))
-    {
-      if(rotorNameMap.count(rotorName) == 0)
-        throw invalid_argument("selected rotor name incorrect must be I...VIII");
-  
-      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
-      istringstream ss(rotorCfg);
-      string token;
-      string rotorCfgArray[2]; int i=0;
-      while(getline(ss, token, '<'))
-      {
-        rotorCfgArray[i] = token; i++;
-      }
-      
-      string rotorWiring = rotorCfgArray[0];
-      string rotorSteps  = rotorCfgArray[1];
-      Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
-      rotorsRev.push_back(r);
-      k++; 
-    }
-  
-    Reflector      reflector(REFLECTORS[0]);
-    Plugboard      plugboard(plugboardCfg);
-    string input;
-    if(argc == 2) input = string(argv[1]);
-    else input = ciphertext;
-  
-    vector<Rotor> rotors;
-    rotors.push_back(rotorsRev[2]);
-    rotors.push_back(rotorsRev[1]);
-    rotors.push_back(rotorsRev[0]);
-    string result;
-    EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
-    cout << "test input " << input << endl;  
-    cout << "result " << result << endl;  
-  
-    string test1_decrypted = "ANOKH XDRIN GENDX MELDE XAUFF INDUN GXZAH LREICHERXM ENSCH LICHE RXUEB ERRES TEXZW OELFX KMXWESTLIC HXSMO LENSK XGROE SSERE XAUSM ASSEX MOGLICHXTA USEND EYWIE XVERF AHREX ICHXW EITER YOBERSTXFE LDPOL IZEI";
-    assert(result == test1_decrypted);
-  
-    cout << "test 1 success" << endl;
-  }  
+  //for(unsigned rj=0; rj<5; rj++)
+  int rj=1; 
+	  {
+    //if(ri == rj) continue;
+  //for(unsigned rk=0; rk<5; rk++)
+  int rk= 3; 
   {
-	  cout << "running test 2 ..." << endl;
-    const string rotorSelection = "IV II V";
-    const string ringSetting    = "G M Y";
-    const string messageKey     = "D H O";
-    const string plugboardCfg   = "DN GR IS KC QX TM PV HY FW BJ";
-    const string reflectorCfg      = "B";
-    const string  ciphertext = 
-	    "GXS";
-//"NQVLT YQFSE WWGJZ GQHVS EIXIM YKCNW IEBMB ATPPZ TDVCU PKAY";
-
-    map<string, int> rotorNameMap;
-    rotorNameMap["I"]    = 0; 
-    rotorNameMap["II"]   = 1; 
-    rotorNameMap["III"]  = 2; 
-    rotorNameMap["IV"]   = 3; 
-    rotorNameMap["V"]    = 4; 
-    rotorNameMap["VI"]   = 5; 
-    rotorNameMap["VII"]  = 6; 
-    rotorNameMap["VIII"] = 7; 
-  
-   
-    vector<char> ringSettingVec; 
-    istringstream issRingSetting(ringSetting);
-    string rs;
-    while(getline(issRingSetting, rs, ' '))
-    {
-      ringSettingVec.push_back(rs[0]);
-    }
-  
-  
-    vector<char> messageKeyVec;
-    istringstream issMessageKeyVec(messageKey);
-    string wp;
-    while(getline(issMessageKeyVec, wp, ' '))
-    {
-      messageKeyVec.push_back(wp[0]);
-    }
-  
-  
-    vector<Rotor> rotorsRev;
-    istringstream iss(rotorSelection);
-    int k=0;
-    string rotorName;
-    while(getline(iss, rotorName, ' '))
-    {
-      if(rotorNameMap.count(rotorName) == 0)
-        throw invalid_argument("selected rotor name incorrect must be I...VIII");
-  
-      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
-      istringstream ss(rotorCfg);
-      string token;
-      string rotorCfgArray[2]; int i=0;
-      while(getline(ss, token, '<'))
-      {
-        rotorCfgArray[i] = token; i++;
-      }
-      
-      string rotorWiring = rotorCfgArray[0];
-      string rotorSteps  = rotorCfgArray[1];
-      Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
-      rotorsRev.push_back(r);
-      k++; 
-    }
-  
-    Reflector      reflector(REFLECTORS[0]);
-    Plugboard      plugboard(plugboardCfg);
-    string input;
-    if(argc == 2) input = string(argv[1]);
-    else input = ciphertext;
-  
-    vector<Rotor> rotors;
-    rotors.push_back(rotorsRev[2]);
-    rotors.push_back(rotorsRev[1]);
-    rotors.push_back(rotorsRev[0]);
-    string result;
-    EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
-    cout << "test input " << input << endl;  
-    cout << "result " << result << endl;  
-  
-    assert(result == "RLP");
-  
-    cout << "test 2 success" << endl;
-  }  
+   //if(rk == ri || rk == rj) continue;
+//	    rotorstats rs;
+  rotorSel[0] = rotorVec[ri];
+  rotorSel[1] = rotorVec[rj];
+  rotorSel[2] = rotorVec[rk]; 
+  bestIC = 0;
+  time_t start;
+  time(&start);
+  //for(unsigned ringSettingR=0; ringSettingR<26; ringSettingR++)
   {
-	  cout << "running test 3 ..." << endl;
-    const string rotorSelection = "IV II V";
-    const string ringSetting    = "G M Y";
-    const string messageKey     = "R L P";
-    const string plugboardCfg   = "DN GR IS KC QX TM PV HY FW BJ";
-    const string reflectorCfg      = "B";
-    const string  ciphertext = 
-      "NQVLT YQFSE WWGJZ GQHVS EIXIM YKCNW IEBMB ATPPZ TDVCU PKAY";
-
-    map<string, int> rotorNameMap;
-    rotorNameMap["I"]    = 0; 
-    rotorNameMap["II"]   = 1; 
-    rotorNameMap["III"]  = 2; 
-    rotorNameMap["IV"]   = 3; 
-    rotorNameMap["V"]    = 4; 
-    rotorNameMap["VI"]   = 5; 
-    rotorNameMap["VII"]  = 6; 
-    rotorNameMap["VIII"] = 7; 
-  
-   
-    vector<char> ringSettingVec; 
-    istringstream issRingSetting(ringSetting);
-    string rs;
-    while(getline(issRingSetting, rs, ' '))
-    {
-      ringSettingVec.push_back(rs[0]);
-    }
-  
-  
-    vector<char> messageKeyVec;
-    istringstream issMessageKeyVec(messageKey);
-    string wp;
-    while(getline(issMessageKeyVec, wp, ' '))
-    {
-      messageKeyVec.push_back(wp[0]);
-    }
-  
-  
-    vector<Rotor> rotorsRev;
-    istringstream iss(rotorSelection);
-    int k=0;
-    string rotorName;
-    while(getline(iss, rotorName, ' '))
-    {
-      if(rotorNameMap.count(rotorName) == 0)
-        throw invalid_argument("selected rotor name incorrect must be I...VIII");
-  
-      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
-      istringstream ss(rotorCfg);
-      string token;
-      string rotorCfgArray[2]; int i=0;
-      while(getline(ss, token, '<'))
-      {
-        rotorCfgArray[i] = token; i++;
-      }
-      
-      string rotorWiring = rotorCfgArray[0];
-      string rotorSteps  = rotorCfgArray[1];
-      Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
-      rotorsRev.push_back(r);
-      k++; 
-    }
-  
-    Reflector      reflector(REFLECTORS[0]);
-    Plugboard      plugboard(plugboardCfg);
-    string input;
-    if(argc == 2) input = string(argv[1]);
-    else input = ciphertext;
-  
-    vector<Rotor> rotors;
-    rotors.push_back(rotorsRev[2]);
-    rotors.push_back(rotorsRev[1]);
-    rotors.push_back(rotorsRev[0]);
-    string result;
-    EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
-    cout << "test input " << input << endl;  
-    cout << "result " << result << endl;  
-  
-    string test1_decrypted =
-"FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP";
-    assert(result == test1_decrypted);
-  
-    cout << "test 3 success" << endl;
-    //return 0;
-  }  
+  int ringSettingR='Y' - 'A';
+  //for(unsigned ringSettingM=0; ringSettingM<26; ringSettingM++)
+  int ringSettingM='M' - 'A';
   {
-	  cout << "all tests passed, attempting to recover a key ..." << endl;
-    const string rotorSelection = "I II III IV V VI VII VIII";
-    const string ringSetting    = "R R R";
-    const string messageKey     = "M M M";
-    const string plugboardCfg   = "DN GR IS KC QX TM PV HY FW BJ";
-    const string reflectorCfg      = "B";
-    const string  ciphertext = 
-      "NQVLT YQFSE WWGJZ GQHVS EIXIM YKCNW IEBMB ATPPZ TDVCU PKAY";
-
-    map<string, int> rotorNameMap;
-    rotorNameMap["I"]    = 0; 
-    rotorNameMap["II"]   = 1; 
-    rotorNameMap["III"]  = 2; 
-    rotorNameMap["IV"]   = 3; 
-    rotorNameMap["V"]    = 4; 
-    rotorNameMap["VI"]   = 5; 
-    rotorNameMap["VII"]  = 6; 
-    rotorNameMap["VIII"] = 7; 
-  
-   
-    vector<char> ringSettingVec; 
-    istringstream issRingSetting(ringSetting);
-    string rs;
-    while(getline(issRingSetting, rs, ' '))
+  //for(unsigned ringSettingL=0; ringSettingL<26; ringSettingL++)
+  int ringSettingL='G' - 'A';
+  {
+    //cout << "begin message key scan " << endl;
+    time_t start;
+    time(&start);
+    for(unsigned i=0; i<26; i++)
+    //int i=4;
     {
-      ringSettingVec.push_back(rs[0]);
-    }
-  
-  
-    vector<char> messageKeyVec;
-    istringstream issMessageKeyVec(messageKey);
-    string wp;
-    while(getline(issMessageKeyVec, wp, ' '))
-    {
-      messageKeyVec.push_back(wp[0]);
-    }
-  
-  
-    vector<Rotor> rotorsRev;
-    istringstream iss(rotorSelection);
-    int k=0;
-    string rotorName;
-    while(getline(iss, rotorName, ' '))
-    {
-      if(rotorNameMap.count(rotorName) == 0)
-        throw invalid_argument("selected rotor name incorrect must be I...VIII");
-  
-      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
-      istringstream ss(rotorCfg);
-      string token;
-      string rotorCfgArray[2]; int i=0;
-      while(getline(ss, token, '<'))
+      for(unsigned j=0; j<26; j++)
+      //int j=1;
       {
-        rotorCfgArray[i] = token; i++;
-      }
-      
-      string rotorWiring = rotorCfgArray[0];
-      string rotorSteps  = rotorCfgArray[1];
-      //Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
-      Rotor r = Rotor(rotorWiring, rotorSteps, 'Z', 'Z');
-      rotorsRev.push_back(r);
-      k++; 
-    }
-  
-    Reflector      reflector(REFLECTORS[0]);
-    Plugboard      plugboard(plugboardCfg);
-    string input;
-    if(argc == 2) input = string(argv[1]);
-    else input = ciphertext;
- 
-    //for(int rot1=0; rot1<8; rot1++) 
-    int rot1 = 3; int rot2 = 1; int rot3 = 4;
-    {
-      //for(int rot2=0; rot2<8; rot2++) 
-      { //if(rot2 == rot1) continue;
-        //for(int rot3=0; rot3<8; rot3++) 
-        { //if(rot3 == rot1 || rot3 == rot2) continue;
-          vector<Rotor> rotors;
-          rotors.push_back(rotorsRev[rot3]);
-          rotors.push_back(rotorsRev[rot2]);
-          rotors.push_back(rotorsRev[rot1]);
-	  cout << "current rotors " << rot1 << " " << rot2 << " " << rot3 << endl;
-          //for(int ring1=0; ring1<26; ring1++) 
-	  int ring1=6;
-          { 
-            //for(int ring2=0; ring2<26; ring2++) 
-	    int ring2=12;
-            { 
-              //for(int ring3=0; ring3<26; ring3++) 
-	      int ring3=24;
-              { 
-	  //cout << "current rings " << ring1 << " " << ring2 << " " << ring3 << endl;
-                //for(int msg1=0; msg1<26; msg1++) 
-                { 
-                  //for(int msg2=0; msg2<26; msg2++) 
-                  { //if(msg2 == msg1) continue;
-                    //for(int msg3=0; msg3<26; msg3++) 
-                    { //if(msg3 == msg1 || msg3 == msg2) continue;
-	  //cout << "current msgkey " << msg1 << " " << msg2 << " " << msg3 << endl;
-	  int msg1 = 17;
-	int msg2 = 11;int msg3 = 15;
-		      Rotor r1 = rotors[0];
-		      r1.ringSetting(LETTERS[ring3]);
-		      Rotor r2 = rotors[1];
-		      r2.ringSetting(LETTERS[ring2]);
-		      Rotor r3 = rotors[2];
-		      r3.ringSetting(LETTERS[ring1]);
+        for(unsigned k=0; k<26; k++)
+        //unsigned k=3;
+        {
+          rotorSel[0].ringSetting(LETTERS[ringSettingR]); rotorSel[0].startPosition(LETTERS[i]);
+          rotorSel[1].ringSetting(LETTERS[ringSettingM]); rotorSel[1].startPosition(LETTERS[j]);
+          rotorSel[2].ringSetting(LETTERS[ringSettingL]); rotorSel[2].startPosition(LETTERS[k]);
+          rotorSel[2].startPosition(LETTERS[k]);
+          Plugboard p(plugboardCfg);
+          EnigmaMachine em = EnigmaMachine(rotorSel, reflector, p);
+          em.crypt(input, result);
+	  {
+          double ic0 = ic(result);
+	  //if(ic0 > bestIC)
+          {
+            //bestIC = ic0;  
+            //cout << "new best " << ic0 << endl;
+            //cout << "rotor order " << rotorIndexToNameMap[rk] << " " << rotorIndexToNameMap[rj] << " " << rotorIndexToNameMap[ri] << endl;
+            string rotorsel = rotorIndexToNameMap[rk] + " " + rotorIndexToNameMap[rj] + " " + rotorIndexToNameMap[ri] ;
+            string ringsetting;
+	    ringsetting += LETTERS[ringSettingL];
+	    ringsetting += LETTERS[ringSettingM];
+	    ringsetting += LETTERS[ringSettingR];
 
-		      r1.windowSetting(LETTERS[msg3]);
-		      r2.windowSetting(LETTERS[msg2]);
-		      r3.windowSetting(LETTERS[msg1]);
-		      rotors[0] = r1;
-		      rotors[1] = r2;
-		      rotors[2] = r3;
-                      string result;
-                      EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
-                      string test1_decrypted =
-            "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP";
-                      if(result == test1_decrypted) { cout << "found key " << test1_decrypted << endl; cout << "rotors " << rot1 << " " << rot2 << " " << rot3 << endl; cout << "rings " << ring1 << " " << ring2 << " " << ring3 << endl; cout << "msgkey " << msg1 << " " << msg2 << " " << msg3 << endl; ; }
-		      cout << result << endl;
-                    }  //msg
-                  }  //msg
-                }  //msg
-              }  //rings
-            }  //rings
-          }  //rings
-        }  
-      }  
-    }  
-      
-    return 0;
-  }  
+            string msgkey;
+	    msgkey += LETTERS[k];
+	    msgkey +=  LETTERS[j];
+	    msgkey += LETTERS[i] ;
+
+	    //cout << rotorsel << endl;
+	    //cout << ringsetting << endl;
+	    //cout << msgkey << endl;
+	    //cout << result << endl;
+            if(result == "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP") 
+            {
+	    cout << rotorsel << endl;
+	    cout << ringsetting << endl;
+	    cout << msgkey << endl;
+	    cout << result << endl;
+	      break;
+            }
+          }
+	  }
+        }
+      }
+    }
+  time_t end;
+  time(&end);
+  double diff = difftime(end, start);
+  //cout << "elapsed time for message key scan " << diff  << " seconds" << endl;
+  }
+  }
+  time_t end;
+  time(&end);
+  double diff = difftime(end, start);
+  //cout << "elapsed time for rotor order scan " << diff / 60 << " minutes" << endl;
+  }
+	    //stats.push_back(rs);
+  }
+  }
+  }
+
+  //cout << "stats" << endl;
+  //for(int i=0; i<stats.size(); i++)
+ // {
+  //  rotorstats rs = stats[i];
+   // cout << rs.rotorsel << endl;
+ //   cout << rs.best << endl;
+  //  cout << rs.ringsetting << endl;
+   // cout << rs.msgkey << endl;
+    //cout << rs.decrypt << endl;
+ // }
+
+  //}
+  //}
+  time_t end;
+  time(&end);
+  double diff = difftime(end, start);
+  //cout << "elapsed time " << diff / 60 << " minutes" << endl;
+  return 0;
 }
+//XZBIMAMGLZGGDXFVWFOEHQMCDBAGKCORXXOOJICHLYLBOIRGMJXKRTGFJMBNTHAIQWDLJHWBAGQQFLJBEYQAZYYRGWBHWBGNVKILZWNDYLEBETS
