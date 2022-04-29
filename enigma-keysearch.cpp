@@ -11,9 +11,65 @@
 #include <sstream>
 #include <exception>
 #include <limits>
+#include <gsl/gsl_statistics.h>
 
 //#include <chrono>
 #include <time.h>
+
+double english_letter_freq[] = {
+  8.167,
+  1.492,
+  2.782,
+  4.253,
+  12.702,
+  2.228,
+  2.015,
+  6.094,
+  6.966,
+  0.153,
+  0.772,
+  4.025,
+  2.406,
+  6.749,
+  7.507,
+  1.929,
+  0.095,
+  5.987,
+  6.327,
+  9.056,
+  2.758,
+  0.978,
+  2.360,
+  0.150,
+  1.174,
+  0.074
+};
+int letter_count[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+double letter_freq[] = { 0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+void count_frequencies(const std::string& t)
+{
+	for(int i=0; i<26; i++)
+		letter_count[i]=0;
+  for(int i=0;i<t.size(); i++)
+  {
+    char c = t[i];
+    c = c-65;
+    letter_count[c]++;
+  }
+
+  for(int i=0;i<26; i++)
+  {
+    letter_freq[i] = 100*((double)letter_count[i]) / t.size();
+  }
+}
+
+double ic(const std::string& t)
+{
+	count_frequencies(t);
+	double correlation = 0;
+	correlation = gsl_stats_correlation(letter_freq,1,english_letter_freq,1,26);
+	return correlation;
+}
 
 //template<typename TimeT = std::chrono::milliseconds>
 //struct measure
@@ -155,61 +211,6 @@ string caesarshift(const string& s, int shift)
   }
   
   return res;
-}
-string text__ic = "";
-vector<double> freq__ic(256,0);
-double ic(const string& t)
-{
-  text__ic="";
-  memset(freq__ic.data(), 0, freq__ic.size() * sizeof(freq__ic[0]));
-  rms(t, text__ic);
-
-  for(int i=0; i<text__ic.size(); i++)
-  {
-    if(text__ic[i] == ' ') continue;
-    freq__ic[text__ic[i]] ++;
-  }
-
-  double sum=0;
-  for(int i=0; i<freq__ic.size(); i++)
-  {
-    if(freq__ic[i] != 0)
-    {
-      double c = freq__ic[i];
-      if(c != 0)
-        sum += c * (c - 1);
-    } 
-  }
-  double ic = 26 * sum / (text__ic.size() * (text__ic.size() - 1));
-  int th_num=0;
-  int the_num=0;
-  for(size_t offset = t.find("TH"); offset != string::npos; offset = t.find("TH",offset+2))
-	  th_num++;
-  for(size_t offset = t.find("HE"); offset != string::npos; offset = t.find("HE",offset+2))
-	  th_num++;
-  for(size_t offset = t.find("IN"); offset != string::npos; offset = t.find("IN",offset+2))
-	  th_num++;
-  for(size_t offset = t.find("EN"); offset != string::npos; offset = t.find("EN",offset+2))
-	  th_num++;
-  for(size_t offset = t.find("IS"); offset != string::npos; offset = t.find("IS",offset+2))
-	  th_num++;
-  for(size_t offset = t.find("THE"); offset != string::npos; offset = t.find("THE",offset+2))
-	  the_num++;
-  for(size_t offset = t.find("AND"); offset != string::npos; offset = t.find("AND",offset+2))
-	  the_num++;
-  for(size_t offset = t.find("THA"); offset != string::npos; offset = t.find("THA",offset+2))
-	  the_num++;
-  for(size_t offset = t.find("ING"); offset != string::npos; offset = t.find("ING",offset+2))
-	  the_num++;
-  for(size_t offset = t.find("THI"); offset != string::npos; offset = t.find("ING",offset+2))
-	  the_num++;
-
-  float digramscore = th_num * 0.3;
-  float trigramscore = the_num * 0.5;
-  ic += digramscore;
-  ic += trigramscore;
-
-  return ic;
 }
 
 //
@@ -674,7 +675,9 @@ int main(int argc, char** argv)
   string input;
   input = string(argv[1]);
   const string plugboardCfg   = 
-"DN GR IS KC QX TM PV HY FW BJ";
+//"DN GR IS KC QX TM PV HY FW BJ";
+//"EK BZ FO GT HJ IX LP MU RS";
+"";
   const string reflectorCfg      = "B";
   //403 ABC INPUTJHJHJH <PLUGS> <REF>
   cout << "input " << input << endl;
@@ -742,17 +745,17 @@ int main(int argc, char** argv)
   string result = ""; 
   double bestIC=0;
   
-  //for(unsigned ri=0; ri<5; ri++)
-  int ri = 4; 
+  for(unsigned ri=0; ri<5; ri++)
+  //int ri = 0; 
   {
-  //for(unsigned rj=0; rj<5; rj++)
-  int rj=1; 
+  for(unsigned rj=0; rj<5; rj++)
+  //int rj=4; 
 	  {
-    //if(ri == rj) continue;
-  //for(unsigned rk=0; rk<5; rk++)
-  int rk= 3; 
+    if(ri == rj) continue;
+  for(unsigned rk=0; rk<5; rk++)
+  //int rk= 3; 
   {
-   //if(rk == ri || rk == rj) continue;
+   if(rk == ri || rk == rj) continue;
 //	    rotorstats rs;
   rotorSel[0] = rotorVec[ri];
   rotorSel[1] = rotorVec[rj];
@@ -760,14 +763,15 @@ int main(int argc, char** argv)
   bestIC = 0;
   time_t start;
   time(&start);
+          Plugboard p(plugboardCfg);
   //for(unsigned ringSettingR=0; ringSettingR<26; ringSettingR++)
   {
-  int ringSettingR='Y' - 'A';
-  //for(unsigned ringSettingM=0; ringSettingM<26; ringSettingM++)
-  int ringSettingM='M' - 'A';
+  int ringSettingR='A' - 'A';
+  for(unsigned ringSettingM=0; ringSettingM<26; ringSettingM++)
+  //int ringSettingM='M' - 'A';
   {
   //for(unsigned ringSettingL=0; ringSettingL<26; ringSettingL++)
-  int ringSettingL='G' - 'A';
+  int ringSettingL='A' - 'A';
   {
     //cout << "begin message key scan " << endl;
     time_t start;
@@ -785,14 +789,15 @@ int main(int argc, char** argv)
           rotorSel[1].ringSetting(LETTERS[ringSettingM]); rotorSel[1].startPosition(LETTERS[j]);
           rotorSel[2].ringSetting(LETTERS[ringSettingL]); rotorSel[2].startPosition(LETTERS[k]);
           rotorSel[2].startPosition(LETTERS[k]);
-          Plugboard p(plugboardCfg);
           EnigmaMachine em = EnigmaMachine(rotorSel, reflector, p);
           em.crypt(input, result);
 	  {
-          double ic0 = ic(result);
 	  //if(ic0 > bestIC)
+            //if(result == "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP") 
+	    float ic0 = ic(result);
+	    if(ic0 > bestIC)
           {
-            //bestIC = ic0;  
+            bestIC = ic0;  
             //cout << "new best " << ic0 << endl;
             //cout << "rotor order " << rotorIndexToNameMap[rk] << " " << rotorIndexToNameMap[rj] << " " << rotorIndexToNameMap[ri] << endl;
             string rotorsel = rotorIndexToNameMap[rk] + " " + rotorIndexToNameMap[rj] + " " + rotorIndexToNameMap[ri] ;
@@ -806,11 +811,7 @@ int main(int argc, char** argv)
 	    msgkey +=  LETTERS[j];
 	    msgkey += LETTERS[i] ;
 
-	    //cout << rotorsel << endl;
-	    //cout << ringsetting << endl;
-	    //cout << msgkey << endl;
-	    //cout << result << endl;
-            if(result == "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP") 
+            //if(result == "FLUGZ EUGFU EHRER ISTOF WYYXF UELLG RAFXF UELLG PAFXP OFOP") 
             {
 	    cout << rotorsel << endl;
 	    cout << ringsetting << endl;
@@ -834,24 +835,10 @@ int main(int argc, char** argv)
   double diff = difftime(end, start);
   //cout << "elapsed time for rotor order scan " << diff / 60 << " minutes" << endl;
   }
-	    //stats.push_back(rs);
   }
   }
   }
 
-  //cout << "stats" << endl;
-  //for(int i=0; i<stats.size(); i++)
- // {
-  //  rotorstats rs = stats[i];
-   // cout << rs.rotorsel << endl;
- //   cout << rs.best << endl;
-  //  cout << rs.ringsetting << endl;
-   // cout << rs.msgkey << endl;
-    //cout << rs.decrypt << endl;
- // }
-
-  //}
-  //}
   time_t end;
   time(&end);
   double diff = difftime(end, start);

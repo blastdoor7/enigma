@@ -828,6 +828,175 @@ int main(int argc, char** argv)
     assert(result == test1_decrypted);
   
     cout << "test 3 success" << endl;
-    return 0;
+    //return 0;
+  }  
+  {
+	  cout << "generating test encryption  ..." << endl;
+    const string rotorSelection = "IV V III";
+    const string ringSetting    = "X R V";
+    const string messageKey     = "M P Y";
+    const string plugboardCfg   = "";
+    const string reflectorCfg      = "B";
+    const string  ciphertext = 
+
+  "HEREISATESTTEXTFORDECRYPTIONTESTING";
+  
+    map<string, int> rotorNameMap;
+    rotorNameMap["I"]    = 0; 
+    rotorNameMap["II"]   = 1; 
+    rotorNameMap["III"]  = 2; 
+    rotorNameMap["IV"]   = 3; 
+    rotorNameMap["V"]    = 4; 
+    rotorNameMap["VI"]   = 5; 
+    rotorNameMap["VII"]  = 6; 
+    rotorNameMap["VIII"] = 7; 
+  
+   
+    vector<char> ringSettingVec; 
+    istringstream issRingSetting(ringSetting);
+    string rs;
+    while(getline(issRingSetting, rs, ' '))
+    {
+      ringSettingVec.push_back(rs[0]);
+    }
+  
+  
+    vector<char> messageKeyVec;
+    istringstream issMessageKeyVec(messageKey);
+    string wp;
+    while(getline(issMessageKeyVec, wp, ' '))
+    {
+      messageKeyVec.push_back(wp[0]);
+    }
+  
+  
+    vector<Rotor> rotorsRev;
+    istringstream iss(rotorSelection);
+    int k=0;
+    string rotorName;
+    while(getline(iss, rotorName, ' '))
+    {
+      if(rotorNameMap.count(rotorName) == 0)
+        throw invalid_argument("selected rotor name incorrect must be I...VIII");
+  
+      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
+      istringstream ss(rotorCfg);
+      string token;
+      string rotorCfgArray[2]; int i=0;
+      while(getline(ss, token, '<'))
+      {
+        rotorCfgArray[i] = token; i++;
+      }
+      
+      string rotorWiring = rotorCfgArray[0];
+      string rotorSteps  = rotorCfgArray[1];
+      Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
+      rotorsRev.push_back(r);
+      k++; 
+    }
+  
+    Reflector      reflector(REFLECTORS[0]);
+    Plugboard      plugboard(plugboardCfg);
+    string input;
+    if(argc == 2) input = string(argv[1]);
+    else input = ciphertext;
+  
+    vector<Rotor> rotors;
+    rotors.push_back(rotorsRev[2]);
+    rotors.push_back(rotorsRev[1]);
+    rotors.push_back(rotorsRev[0]);
+    string result;
+    EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
+    cout << "test input " << input << endl;  
+    cout << "result " << result << endl;  
+  
+    string test1_decrypted = "ILMNOTZFGHNEFHAPDSXJXWUMBLCJMQWKQAS";
+    assert(result == test1_decrypted);
+  
+    cout << "sample decrypted successfully" << endl;
+  }  
+  {
+	  cout << "generating test encryption single character" << endl;
+    const string rotorSelection = "V IV III";
+    const string ringSetting    = "C B A";
+    const string messageKey     = "A A A";
+    const string plugboardCfg   = "";
+    const string reflectorCfg      = "B";
+    const string  ciphertext = "A";
+
+  
+    map<string, int> rotorNameMap;
+    rotorNameMap["I"]    = 0; 
+    rotorNameMap["II"]   = 1; 
+    rotorNameMap["III"]  = 2; 
+    rotorNameMap["IV"]   = 3; 
+    rotorNameMap["V"]    = 4; 
+    rotorNameMap["VI"]   = 5; 
+    rotorNameMap["VII"]  = 6; 
+    rotorNameMap["VIII"] = 7; 
+  
+   
+    vector<char> ringSettingVec; 
+    istringstream issRingSetting(ringSetting);
+    string rs;
+    while(getline(issRingSetting, rs, ' '))
+    {
+      ringSettingVec.push_back(rs[0]);
+    }
+  
+  
+    vector<char> messageKeyVec;
+    istringstream issMessageKeyVec(messageKey);
+    string wp;
+    while(getline(issMessageKeyVec, wp, ' '))
+    {
+      messageKeyVec.push_back(wp[0]);
+    }
+  
+  
+    vector<Rotor> rotorsRev;
+    istringstream iss(rotorSelection);
+    int k=0;
+    string rotorName;
+    while(getline(iss, rotorName, ' '))
+    {
+      if(rotorNameMap.count(rotorName) == 0)
+        throw invalid_argument("selected rotor name incorrect must be I...VIII");
+  
+      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
+      istringstream ss(rotorCfg);
+      string token;
+      string rotorCfgArray[2]; int i=0;
+      while(getline(ss, token, '<'))
+      {
+        rotorCfgArray[i] = token; i++;
+      }
+      
+      string rotorWiring = rotorCfgArray[0];
+      string rotorSteps  = rotorCfgArray[1];
+      Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
+      rotorsRev.push_back(r);
+      k++; 
+    }
+  
+    Reflector      reflector(REFLECTORS[0]);
+    Plugboard      plugboard(plugboardCfg);
+    string input;
+    if(argc == 2) input = string(argv[1]);
+    else input = ciphertext;
+  
+    vector<Rotor> rotors;
+    rotors.push_back(rotorsRev[2]);
+    rotors.push_back(rotorsRev[1]);
+    rotors.push_back(rotorsRev[0]);
+    string result;
+    EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
+    cout << "test input " << input << endl;  
+    cout << "result " << result << endl;  
+  
+    assert(result == "M");
+  
+    cout << "sample encrypted successfully" << endl;
   }  
 }
+
