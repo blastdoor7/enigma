@@ -1,3 +1,26 @@
+/*******************************************************************************
+* The MIT License (MIT)                                                        
+*                                                         
+* Copyright (c) 2022 blastdoor7 [51786421+blastdoor7@users.noreply.github.com]
+* 
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the Software), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+* 
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+* 
+* THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+*******************************************************************************/
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1080,4 +1103,87 @@ int main(int argc, char** argv)
     assert(result == "MPOJQALCDAATXGDXUOJMXTJEBD");
     cout << "sample encrypted successfully" << endl;
   }  
+  {
+    cout << "generating test encryption single character" << endl;
+    const string rotorSelection = "V IV III";
+    const string ringSetting    = "C B A";
+    const string messageKey     = "A A A";
+    const string plugboardCfg   = "AY BX DE FG QZ HP MW RS JV UT";
+    const string reflectorCfg      = "B";
+    const string  ciphertext = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  
+    map<string, int> rotorNameMap;
+    rotorNameMap["I"]    = 0; 
+    rotorNameMap["II"]   = 1; 
+    rotorNameMap["III"]  = 2; 
+    rotorNameMap["IV"]   = 3; 
+    rotorNameMap["V"]    = 4; 
+    rotorNameMap["VI"]   = 5; 
+    rotorNameMap["VII"]  = 6; 
+    rotorNameMap["VIII"] = 7; 
+  
+   
+    vector<char> ringSettingVec; 
+    istringstream issRingSetting(ringSetting);
+    string rs;
+    while(getline(issRingSetting, rs, ' '))
+    {
+      ringSettingVec.push_back(rs[0]);
+    }
+  
+  
+    vector<char> messageKeyVec;
+    istringstream issMessageKeyVec(messageKey);
+    string wp;
+    while(getline(issMessageKeyVec, wp, ' '))
+    {
+      messageKeyVec.push_back(wp[0]);
+    }
+  
+  
+    vector<Rotor> rotorsRev;
+    istringstream iss(rotorSelection);
+    int k=0;
+    string rotorName;
+    while(getline(iss, rotorName, ' '))
+    {
+      if(rotorNameMap.count(rotorName) == 0)
+        throw invalid_argument("selected rotor name incorrect must be I...VIII");
+  
+      string rotorCfg = ROTORS[rotorNameMap[rotorName]];
+      istringstream ss(rotorCfg);
+      string token;
+      string rotorCfgArray[2]; int i=0;
+      while(getline(ss, token, '<'))
+      {
+        rotorCfgArray[i] = token; i++;
+      }
+      
+      string rotorWiring = rotorCfgArray[0];
+      string rotorSteps  = rotorCfgArray[1];
+      Rotor r = Rotor(rotorWiring, rotorSteps, ringSettingVec[k], messageKeyVec[k]);
+      rotorsRev.push_back(r);
+      k++; 
+    }
+  
+    Reflector      reflector(REFLECTORS[0]);
+    Plugboard      plugboard(plugboardCfg);
+    string input;
+    if(argc == 2) input = string(argv[1]);
+    else input = ciphertext;
+  
+    vector<Rotor> rotors;
+    rotors.push_back(rotorsRev[2]);
+    rotors.push_back(rotorsRev[1]);
+    rotors.push_back(rotorsRev[0]);
+    string result;
+    EnigmaMachine(rotors, reflector, plugboard).crypt(input, result);
+    cout << "test input " << input << endl;  
+    cout << "result " << result << endl;  
+    assert(result == "PNORAUPMEWYUIFEZNEHEZWEUBU");
+    cout << "sample encrypted successfully" << endl;
+  }  
 }
+
+
+
